@@ -5,7 +5,7 @@ import java.sql.DriverManager;
 
 public class DBConnection {
     private static final String URL  = "jdbc:mysql://localhost:3306/buyme?useSSL=false&allowPublicKeyRetrieval=true";
-    private static final String USER = "<yourusername>";
+    private static final String USER = "<yourusername>"; // replace locally
     private static final String PASS = "<yourpassword>"; // replace locally
 
     static {
