@@ -2,7 +2,7 @@
 <%
     Object u = session.getAttribute("user");
     if (u == null) {
-        // not logged in → bounce to login with a friendly message
+       
         session.setAttribute("flash", "Please login");
         response.sendRedirect("login.jsp");
         return;
