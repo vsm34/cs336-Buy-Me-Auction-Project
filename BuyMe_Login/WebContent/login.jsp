@@ -90,12 +90,12 @@
     </form>
 
     <%
-      // Support both: query param "error" (from invalid login) and session "flash" (from logout)
+
       String msg = request.getParameter("error");
       String flash = (String) session.getAttribute("flash");
       if (flash != null && !flash.isEmpty()) {
-          msg = flash;                    // prefer flash if present
-          session.removeAttribute("flash"); // clear one-time message
+          msg = flash;                    
+          session.removeAttribute("flash"); 
       }
     %>
 
@@ -106,14 +106,14 @@
 
   <script>
     (function () {
-      // Auto-hide the message after 3 seconds
+     
       var el = document.getElementById('message');
       if (el && !el.classList.contains('hidden')) {
         setTimeout(function () {
           el.classList.add('hidden');
         }, 3000);
       }
-      // Clean the URL to remove any ?error=... so refresh won't bring it back
+     
       if (window.location.search) {
         try {
           var url = new URL(window.location.href);
