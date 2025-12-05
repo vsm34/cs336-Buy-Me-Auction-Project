@@ -5,7 +5,6 @@
     <meta charset="UTF-8">
     <title>BuyMe Customer Rep Login</title>
 
-    <!-- SAME CSS AS login.jsp -->
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -56,10 +55,15 @@
             background-color: #005bb5;
         }
 
-        .logout-msg {
-            color: red;
+        .msg {
             margin-bottom: 15px;
             font-size: 14px;
+        }
+        .error {
+            color: red;
+        }
+        .info {
+            color: #333;
         }
     </style>
 </head>
@@ -69,13 +73,19 @@
 
         <h1>BuyMe Customer Rep Login</h1>
 
-        <%  
-            String msg = request.getParameter("msg");
-            if (msg != null) {  
+        <%
+            // Show either ?error=... or ?msg=...
+            String err  = request.getParameter("error");
+            String msg  = request.getParameter("msg");
+            String text = (err != null) ? err : msg;
+
+            if (text != null) {
         %>
-            <p id="logoutMessage" class="logout-msg"><%= msg %></p>
-        <%  
-            }  
+            <p id="loginMessage" class="msg <%= (err != null ? "error" : "info") %>">
+                <%= text %>
+            </p>
+        <%
+            }
         %>
 
         <form action="crCheckLogin.jsp" method="post">
@@ -86,9 +96,8 @@
 
     </div>
 
-    <!-- Auto-hide logout message -->
     <script>
-        const msg = document.getElementById("logoutMessage");
+        const msg = document.getElementById("loginMessage");
         if (msg) {
             setTimeout(() => { msg.style.display = "none"; }, 3000);
         }
