@@ -2,7 +2,7 @@
 <%@ include file="header.jsp" %>
 
 <%
-    // Only allow logged-in customer reps
+    // Only allow logged in customer reps
     if (role == null || !"cr".equals(role) || currentUser == null) {
         response.sendRedirect("crLogin.jsp?error=Please+log+in+as+Customer+Rep");
         return;
