@@ -32,7 +32,7 @@ try (Connection conn = DBConnection.getConnection()) {
                 }
             }
 
-s
+
             if (alertId == null) {
                 try (PreparedStatement ps = conn.prepareStatement(
                         "INSERT INTO alertsets (isActive, DateCreated, Username) " +
