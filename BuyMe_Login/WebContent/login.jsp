@@ -71,8 +71,18 @@
       min-height: 18px;
     }
 
-    .hidden {
-      display: none;
+    .hidden { display: none; }
+
+    .subtext {
+      margin-top: 16px;
+      font-size: 13px;
+    }
+    .subtext a {
+      color: #0073e6;
+      text-decoration: none;
+    }
+    .subtext a:hover {
+      text-decoration: underline;
     }
   </style>
 </head>
@@ -84,10 +94,8 @@
     <form action="checkLogin.jsp" method="post">
       <label>Username:</label>
       <input type="text" name="username" required>
-
       <label>Password:</label>
       <input type="password" name="password" required>
-
       <button type="submit">Log In</button>
     </form>
 
@@ -103,25 +111,27 @@
     <p id="message" class="msg <%= (msg == null) ? "hidden" : "" %>">
       <%= (msg == null) ? "" : msg %>
     </p>
+
+    <div class="subtext">
+        Don’t have an account? <a href="signup.jsp">Sign up here</a>
+    </div>
   </div>
 
   <script>
     (function () {
       var el = document.getElementById('message');
       if (el && !el.classList.contains('hidden')) {
-        setTimeout(function () {
-          el.classList.add('hidden');
-        }, 3000);
+        setTimeout(function () { el.classList.add('hidden'); }, 3000);
       }
-
       if (window.location.search) {
         try {
           var url = new URL(window.location.href);
           url.search = '';
           window.history.replaceState({}, document.title, url.toString());
-        } catch (e) { }
+        } catch (e) {}
       }
     })();
   </script>
 </body>
 </html>
+
