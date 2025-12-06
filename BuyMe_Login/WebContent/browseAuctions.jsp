@@ -4,7 +4,6 @@
 <%@ include file="header.jsp" %>
 
 <%
-
     request.setCharacterEncoding("UTF-8");
 
     String subcategory = request.getParameter("subcategory");
@@ -29,41 +28,46 @@
 <div class="page">
     <h2>Browse Auctions</h2>
 
+
+
     <form method="get" action="browseAuctions.jsp" style="margin-bottom: 12px;">
         Subcategory:
         <select name="subcategory">
-            <option value="All"   <%= "All".equals(subcategory) ? "selected" : "" %>>All</option>
-            <option value="golf"  <%= "golf".equals(subcategory) ? "selected" : "" %>>golf</option>
-            <option value="basketball" <%= "basketball".equals(subcategory) ? "selected" : "" %>>basketball</option>
-            <option value="tennis" <%= "tennis".equals(subcategory) ? "selected" : "" %>>tennis</option>
-            <option value="streetwear" <%= "streetwear".equals(subcategory) ? "selected" : "" %>>streetwear</option>
+            <option value="All"         <%= "All".equals(subcategory) ? "selected" : "" %>>All</option>
+            <option value="golf"        <%= "golf".equals(subcategory) ? "selected" : "" %>>golf</option>
+            <option value="basketball"  <%= "basketball".equals(subcategory) ? "selected" : "" %>>basketball</option>
+            <option value="tennis"      <%= "tennis".equals(subcategory) ? "selected" : "" %>>tennis</option>
+            <option value="streetwear"  <%= "streetwear".equals(subcategory) ? "selected" : "" %>>streetwear</option>
         </select>
 
         &nbsp; Status:
         <select name="status">
-            <option value="all"    <%= "all".equals(status) ? "selected" : "" %>>All</option>
-            <option value="open"   <%= "open".equals(status) ? "selected" : "" %>>Open</option>
-            <option value="closed" <%= "closed".equals(status) ? "selected" : "" %>>Closed</option>
+            <option value="all"    <%= "all".equals(status)    ? "selected" : "" %>>All</option>
+            <option value="open"   <%= "open".equals(status)   ? "selected" : "" %>>Open Only</option>
+            <option value="closed" <%= "closed".equals(status) ? "selected" : "" %>>Closed Only</option>
         </select>
 
         &nbsp; Keyword:
-        <input type="text" name="keyword" value="<%= (keyword == null ? "" : keyword) %>"
-               placeholder="Search by name / type">
+        <input type="text" name="keyword" value="<%= (keyword == null ? "" : keyword) %>" />
 
         &nbsp; Min Price:
-        <input type="text" name="minPrice" size="6" value="<%= (minStr == null ? "" : minStr) %>">
-        &nbsp; Max Price:
-        <input type="text" name="maxPrice" size="6" value="<%= (maxStr == null ? "" : maxStr) %>">
+        <input type="text" name="minPrice" value="<%= (minStr == null ? "" : minStr) %>" size="6"/>
 
-        &nbsp; Sort by:
+        &nbsp; Max Price:
+        <input type="text" name="maxPrice" value="<%= (maxStr == null ? "" : maxStr) %>" size="6"/>
+
+        <br/><br/>
+
+        Sort by:
         <select name="sortBy">
-            <option value="closeDate"  <%= "closeDate".equals(sortBy) ? "selected" : "" %>>Close Date</option>
+            <option value="closeDate"  <%= "closeDate".equals(sortBy)  ? "selected" : "" %>>Close Date/Time</option>
             <option value="currentBid" <%= "currentBid".equals(sortBy) ? "selected" : "" %>>Current Highest Bid</option>
         </select>
 
+        &nbsp; Direction:
         <select name="sortDir">
-            <option value="asc"  <%= "asc".equalsIgnoreCase(sortDir) ? "selected" : "" %>>Ascending</option>
-            <option value="desc" <%= "desc".equalsIgnoreCase(sortDir) ? "selected" : "" %>>Descending</option>
+            <option value="asc"  <%= "asc".equals(sortDir)  ? "selected" : "" %>>Ascending</option>
+            <option value="desc" <%= "desc".equals(sortDir) ? "selected" : "" %>>Descending</option>
         </select>
 
         &nbsp; <button type="submit">Search</button>
@@ -95,27 +99,26 @@
 
     List<Object> params = new ArrayList<>();
 
-    //Subcategory filter
+    
     if (subcategory != null && !"All".equals(subcategory)) {
         sql.append(" AND a.Subcategory = ? ");
         params.add(subcategory);
     }
 
-    if ("open".equalsIgnoreCase(status)) {
-        sql.append(" AND a.Closed = 0 AND TIMESTAMP(a.CloseDate, a.CloseTime) > NOW() ");
-    } else if ("closed".equalsIgnoreCase(status)) {
-        sql.append(" AND (a.Closed = 1 OR TIMESTAMP(a.CloseDate, a.CloseTime) <= NOW()) ");
+   
+    if ("open".equals(status)) {
+        sql.append(" AND a.Closed = 0 ");
+    } else if ("closed".equals(status)) {
+        sql.append(" AND a.Closed = 1 ");
     }
 
+    
     if (keyword != null && !keyword.trim().isEmpty()) {
-        String like = "%" + keyword.trim() + "%";
-        sql.append(" AND (a.Name LIKE ? OR a.Subcategory LIKE ? OR a.SubAttribute LIKE ?) ");
-        params.add(like);
-        params.add(like);
-        params.add(like);
+        sql.append(" AND LOWER(a.Name) LIKE ? ");
+        params.add("%" + keyword.toLowerCase() + "%");
     }
 
-    // Price range on starting price
+    
     if (minPrice != null) {
         sql.append(" AND a.Price >= ? ");
         params.add(minPrice);
@@ -125,31 +128,29 @@
         params.add(maxPrice);
     }
 
-    sql.append(
-        " GROUP BY a.A_ID, a.Name, a.Subcategory, a.SubAttribute, " +
-        "          a.Price, a.CloseDate, a.CloseTime, a.Closed "
-    );
+    sql.append(" GROUP BY a.A_ID, a.Name, a.Subcategory, a.SubAttribute, a.Price, " +
+               "          a.CloseDate, a.CloseTime, a.Closed ");
 
    
-    String orderClause;
     if ("currentBid".equals(sortBy)) {
-        orderClause = "currentBid";
+        sql.append(" ORDER BY currentBid ");
     } else {
-        //default: close date/time
-        orderClause = "a.CloseDate, a.CloseTime";
+        sql.append(" ORDER BY a.CloseDate, a.CloseTime ");
     }
-
-    String dir = "DESC".equalsIgnoreCase(sortDir) ? "DESC" : "ASC";
-    sql.append(" ORDER BY " + orderClause + " " + dir);
+    if ("desc".equals(sortDir)) {
+        sql.append(" DESC ");
+    } else {
+        sql.append(" ASC ");
+    }
 
     try (Connection conn = DBConnection.getConnection();
          PreparedStatement ps = conn.prepareStatement(sql.toString())) {
 
         int idx = 1;
         for (Object p : params) {
-            if (p instanceof String)  ps.setString(idx++, (String)p);
+            if (p instanceof String)     ps.setString(idx++, (String)p);
             else if (p instanceof Float) ps.setFloat(idx++, (Float)p);
-            else                       ps.setObject(idx++, p);
+            else                         ps.setObject(idx++, p);
         }
 
         try (ResultSet rs = ps.executeQuery()) {
@@ -164,12 +165,7 @@
                 java.sql.Time cTime = rs.getTime("CloseTime");
                 boolean closedFlag  = rs.getBoolean("Closed");
 
-                boolean isClosed = closedFlag ||
-                                   (cDate != null && cTime != null &&
-                                    (new java.sql.Timestamp(
-                                         cDate.getTime() + cTime.getTime()
-                                     ).before(new java.sql.Timestamp(System.currentTimeMillis()))));
-
+                boolean isClosed = closedFlag;
                 String statusLabel = isClosed ? "Closed" : "Open";
 %>
         <tr>
@@ -181,7 +177,12 @@
             <td>$<%= String.format("%.2f", currBid) %></td>
             <td><%= statusLabel %></td>
             <td><%= cDate %> <%= cTime %></td>
-            <td><a href="viewAuction.jsp?A_ID=<%= aId %>">View</a></td>
+            <td>
+                <a href="viewAuction.jsp?A_ID=<%= aId %>">View</a>
+                <% if (currentUser != null && "user".equals(role)) { %>
+                    | <a href="setAlert.jsp?A_ID=<%= aId %>">Set Alert</a>
+                <% } %>
+            </td>
         </tr>
 <%
             }
@@ -194,3 +195,4 @@
 %>
     </table>
 </div>
+

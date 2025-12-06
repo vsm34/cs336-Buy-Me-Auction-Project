@@ -1,9 +1,11 @@
 <%@ page import="java.sql.*, utils.DBConnection" %>
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+
 <%@ include file="header.jsp" %>
 
 <%
-    if (role == null || (!"admin".equals(role) && !"cr".equals(role))) {
+    
+    if (role == null) {
         response.sendRedirect("index.jsp");
         return;
     }
@@ -11,22 +13,35 @@
     String searchUser = request.getParameter("username");
     if (searchUser != null) {
         searchUser = searchUser.trim();
+        if (searchUser.isEmpty()) {
+            searchUser = null;
+        }
+    }
+
+    
+    if (searchUser == null && currentUser != null) {
+        searchUser = currentUser;
     }
 %>
 
 <div class="page">
   <h2>User History</h2>
-  <p>View a buyer/seller&apos;s auction activity (auctions posted and bids placed).</p>
+  <p>
+      View a buyer/seller&apos;s auction activity (auctions they posted and auctions they placed bids on).
+      Enter any end-user username, or leave it blank to view your own history.
+  </p>
 
   <form method="get" action="userHistory.jsp" style="margin-bottom: 16px;">
     <label>Username:&nbsp;
-      <input type="text" name="username" value="<%= (searchUser == null ? "" : searchUser) %>" />
+      <input type="text" name="username"
+             value="<%= (searchUser == null ? "" : searchUser) %>" />
     </label>
     <button type="submit">Search</button>
   </form>
 
 <%
-if (searchUser != null && !searchUser.isEmpty()) {
+if (searchUser != null) {
+
     Connection conn = null;
     PreparedStatement psCheck = null;
     PreparedStatement psAuctions = null;
@@ -38,7 +53,7 @@ if (searchUser != null && !searchUser.isEmpty()) {
     try {
         conn = DBConnection.getConnection();
 
-
+      
         psCheck = conn.prepareStatement(
             "SELECT Username FROM end_user WHERE Username = ?"
         );
@@ -50,7 +65,7 @@ if (searchUser != null && !searchUser.isEmpty()) {
   <p style="color:red;">No end_user with username &quot;<%= searchUser %>&quot; was found.</p>
 <%
         } else {
-
+       
             psAuctions = conn.prepareStatement(
                 "SELECT a.A_ID, a.Name, a.Price, a.CloseDate, a.CloseTime, a.Closed " +
                 "FROM auction a " +
@@ -103,7 +118,7 @@ if (searchUser != null && !searchUser.isEmpty()) {
   <br/>
 
 <%
-
+            
             psBids = conn.prepareStatement(
                 "SELECT a.A_ID, a.Name, b.Price, b.Time, a.CloseDate, a.CloseTime, a.Closed " +
                 "FROM bids b " +
@@ -136,16 +151,16 @@ if (searchUser != null && !searchUser.isEmpty()) {
                 String name = rsBids.getString("Name");
                 float bidPrice = rsBids.getFloat("Price");
                 java.sql.Time bidTime = rsBids.getTime("Time");
+                boolean closedFlag = rsBids.getBoolean("Closed");
                 java.sql.Date cd2 = rsBids.getDate("CloseDate");
                 java.sql.Time ct2 = rsBids.getTime("CloseTime");
-                boolean closed2 = rsBids.getBoolean("Closed");
 %>
     <tr>
       <td><%= aId %></td>
       <td><%= name %></td>
       <td>$<%= String.format("%.2f", bidPrice) %></td>
       <td><%= bidTime %></td>
-      <td><%= (closed2 ? "Closed" : "Open") %></td>
+      <td><%= (closedFlag ? "Closed" : "Open") %></td>
       <td><%= cd2 %> <%= ct2 %></td>
       <td><a href="viewAuction.jsp?A_ID=<%= aId %>">View</a></td>
     </tr>
@@ -153,28 +168,30 @@ if (searchUser != null && !searchUser.isEmpty()) {
             }
             if (!anyBids) {
 %>
-    <tr><td colspan="7">This user has not placed any bids.</td></tr>
+    <tr><td colspan="7">No bids placed by this user.</td></tr>
 <%
             }
 %>
   </table>
 
 <%
-        } 
+        }
     } catch (Exception e) {
+        e.printStackTrace();   
 %>
-  <p style="color:red;">Error loading history: <%= e.getMessage() %></p>
+  <p style="color:red;">An error occurred while loading history. Please try again later.</p>
 <%
     } finally {
-        if (rsCheck != null) try { rsCheck.close(); } catch (Exception e) {}
-        if (rsAuc   != null) try { rsAuc.close(); }   catch (Exception e) {}
-        if (rsBids  != null) try { rsBids.close(); }  catch (Exception e) {}
-        if (psCheck != null) try { psCheck.close(); } catch (Exception e) {}
-        if (psAuctions != null) try { psAuctions.close(); } catch (Exception e) {}
-        if (psBids != null) try { psBids.close(); }    catch (Exception e) {}
-        if (conn != null) try { conn.close(); }        catch (Exception e) {}
+        try { if (rsCheck != null) rsCheck.close(); } catch (Exception ignore) {}
+        try { if (rsAuc   != null) rsAuc.close();   } catch (Exception ignore) {}
+        try { if (rsBids  != null) rsBids.close();  } catch (Exception ignore) {}
+        try { if (psCheck != null) psCheck.close(); } catch (Exception ignore) {}
+        try { if (psAuctions != null) psAuctions.close(); } catch (Exception ignore) {}
+        try { if (psBids != null) psBids.close();   } catch (Exception ignore) {}
+        try { if (conn != null) conn.close();       } catch (Exception ignore) {}
     }
-} 
+}
 %>
 
 </div>
+
