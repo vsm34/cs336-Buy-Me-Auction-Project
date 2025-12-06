@@ -1,7 +1,7 @@
 <%@ page language="java" %>
 
 <%
-    // Make these available to every JSP that includes header.jsp
+
     String currentUser = (String) session.getAttribute("username");
     String role        = (String) session.getAttribute("role");   // "user", "admin", "cr" or null
 %>
