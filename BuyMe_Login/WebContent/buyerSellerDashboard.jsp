@@ -1,22 +1,27 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>BuyMe - Buyer/Seller Dashboard</title>
+    <meta charset="UTF-8">
+    <title>BuyMe - Buyer/Seller Dashboard</title>
 </head>
 <body>
+
 <%@ include file="header.jsp" %>
 
 <div class="page">
-  <h2>Buyer / Seller Dashboard</h2>
-  <ul>
-    <li><a href="browseAuctions.jsp">Browse/Search Auctions</a></li>
-    <li><a href="myBids.jsp">My Bids</a></li>
-    <li><a href="myAuctions.jsp">My Auctions</a></li>
-    <li><a href="createAuction.jsp">Create New Auction</a></li> 
-  </ul>
-  <p>(Later these will link to the actual pages.)</p>
+    <h2>Buyer / Seller Dashboard</h2>
+    <ul>
+        <li><a href="browseAuctions.jsp">Browse / Search Auctions</a></li>
+        <li><a href="myBids.jsp">My Bids</a></li>
+        <li><a href="myAuctions.jsp">My Auctions</a></li>
+        <li><a href="createAuction.jsp">Create New Auction</a></li>
+        <li><a href="watchList.jsp">My Watchlist</a></li>
+        <li><a href="viewsPrevious.jsp">Recently Viewed Auctions</a></li>
+        <li><a href="faqSearch.jsp">FAQ / Search Questions</a></li>
+        <li><a href="askQuestion.jsp">Ask a Question</a></li>
+    </ul>
 </div>
+
 </body>
 </html>

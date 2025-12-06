@@ -2,17 +2,28 @@ package utils;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 
 public class DBConnection {
-    private static final String URL  = "jdbc:mysql://localhost:3306/buyme?useSSL=false&allowPublicKeyRetrieval=true";
-    private static final String USER = "REPLACE"; // replace locally
-    private static final String PASS = "REPLACE"; // replace locally
+
+    // ⚠️ Make sure the DB name here matches your schema: "buyme"
+    private static final String URL =
+        "jdbc:mysql://localhost:3306/buyme?useSSL=false&serverTimezone=UTC";
+
+    // ⚠️ Change these to whatever you use in MySQL Workbench
+    private static final String USER = "root";          // or your MySQL username
+    private static final String PASSWORD = "Srisai12"; // "" if no password
 
     static {
-        try { Class.forName("com.mysql.cj.jdbc.Driver"); }
-        catch (ClassNotFoundException e) { throw new RuntimeException("MySQL JDBC Driver not found", e); }
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
     }
-    public static Connection getConnection() throws Exception {
-        return DriverManager.getConnection(URL, USER, PASS);
+
+    public static Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(URL, USER, PASSWORD);
     }
 }
+

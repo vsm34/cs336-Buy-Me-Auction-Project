@@ -25,14 +25,16 @@
     String name = null;
     float currentPrice = 0f;
     boolean closed = false;
+    String seller = null;
 
     try {
         conn = DBConnection.getConnection();
 
-        // Get auction info + current highest bid if any
+        // Get auction info + seller username
         ps = conn.prepareStatement(
-            "SELECT a.Name, a.Price, a.Closed " +
+            "SELECT a.Name, a.Price, a.Closed, p.Username AS SellerUsername " +
             "FROM auction a " +
+            "LEFT JOIN posts p ON a.A_ID = p.A_ID " +
             "WHERE a.A_ID = ?"
         );
         ps.setInt(1, A_ID);
@@ -43,9 +45,10 @@
             return;
         }
 
-        name = rs.getString("Name");
+        name         = rs.getString("Name");
         currentPrice = rs.getFloat("Price");
-        closed = rs.getBoolean("Closed");
+        closed       = rs.getBoolean("Closed");
+        seller       = rs.getString("SellerUsername");
 
     } catch (SQLException e) {
         out.println("<div class='page'><p style='color:red;'>Error loading auction: " + e.getMessage() + "</p></div>");
@@ -61,11 +64,18 @@
   <h2>Place a Bid</h2>
   <p><b>Auction:</b> <%= name %></p>
   <p><b>Current Price:</b> $<%= currentPrice %></p>
+  <p><b>Seller:</b> <%= (seller == null ? "-" : seller) %></p>
 
   <%
+    // If auction is closed
     if (closed) {
   %>
       <p style="color:red;">This auction is closed. You cannot bid.</p>
+  <%
+    // If current user is the seller, do not allow bidding
+    } else if (seller != null && seller.equals(username)) {
+  %>
+      <p style="color:red;">You created this auction and cannot bid on your own item.</p>
   <%
     } else {
         String flash = (String) session.getAttribute("flash");
@@ -107,6 +117,6 @@
   </form>
 
   <%
-    } // end open/closed
+    } // end open/not-seller branch
   %>
 </div>

@@ -1,33 +1,56 @@
-<%@ page import="java.sql.*,utils.DBConnection" %>
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="java.sql.*, utils.DBConnection" %>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 
 <%
-request.setCharacterEncoding("UTF-8");
-String user = request.getParameter("username");
-String pass = request.getParameter("password");
-boolean ok = false;
+    request.setCharacterEncoding("UTF-8");
 
-try (Connection conn = DBConnection.getConnection();
-     PreparedStatement ps = conn.prepareStatement(
-         "SELECT 1 FROM end_user WHERE Username = ? AND Password = ?")) {
+    String username = request.getParameter("username");
+    String password = request.getParameter("password");
 
-    ps.setString(1, user);
-    ps.setString(2, pass);
+    if (username == null || password == null ||
+        username.trim().isEmpty() || password.trim().isEmpty()) {
 
-    try (ResultSet rs = ps.executeQuery()) {
-        ok = rs.next();
+        response.sendRedirect("login.jsp?error=Please+enter+username+and+password");
+        return;
     }
-} catch (Exception e) {
-    ok = false;
-}
 
-if (ok) {
-    session.setAttribute("username", user);
-    session.setAttribute("role", "user");
-    response.sendRedirect("buyerSellerDashboard.jsp");
-} else {
-    response.sendRedirect("login.jsp?error=Invalid+credentials");
-}
+    boolean ok = false;
+    String debugMsg = null;
+
+    try (Connection conn = DBConnection.getConnection();
+         PreparedStatement ps = conn.prepareStatement(
+             "SELECT Password FROM end_user WHERE Username = ?"
+         )) {
+
+        ps.setString(1, username);
+        try (ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                String dbPass = rs.getString("Password");
+                if (password.equals(dbPass)) {
+                    ok = true;
+                } else {
+                    debugMsg = "Wrong password";
+                }
+            } else {
+                debugMsg = "No such user in end_user";
+            }
+        }
+
+    } catch (Exception e) {
+        e.printStackTrace(); // shows in Tomcat console
+        response.sendRedirect("login.jsp?error=Database+error");
+        return;
+    }
+
+    if (ok) {
+        session.setAttribute("username", username);
+        session.setAttribute("role", "user");   // for header.jsp
+        response.sendRedirect("buyerSellerDashboard.jsp");
+    } else {
+        // while debugging, include reason in query string (you can remove later)
+        if (debugMsg == null) debugMsg = "Invalid credentials";
+        response.sendRedirect("login.jsp?error=" + java.net.URLEncoder.encode(debugMsg, "UTF-8"));
+    }
 %>
 
 

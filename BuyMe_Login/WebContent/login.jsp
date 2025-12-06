@@ -67,7 +67,7 @@
     .msg {
       margin-top: 12px;
       font-size: 14px;
-      color: #b00020; /* red for errors/flash */
+      color: #b00020;
       min-height: 18px;
     }
 
@@ -84,18 +84,19 @@
     <form action="checkLogin.jsp" method="post">
       <label>Username:</label>
       <input type="text" name="username" required>
+
       <label>Password:</label>
       <input type="password" name="password" required>
+
       <button type="submit">Log In</button>
     </form>
 
     <%
-
       String msg = request.getParameter("error");
       String flash = (String) session.getAttribute("flash");
       if (flash != null && !flash.isEmpty()) {
-          msg = flash;                    
-          session.removeAttribute("flash"); 
+          msg = flash;
+          session.removeAttribute("flash");
       }
     %>
 
@@ -106,20 +107,19 @@
 
   <script>
     (function () {
-     
       var el = document.getElementById('message');
       if (el && !el.classList.contains('hidden')) {
         setTimeout(function () {
           el.classList.add('hidden');
         }, 3000);
       }
-     
+
       if (window.location.search) {
         try {
           var url = new URL(window.location.href);
           url.search = '';
           window.history.replaceState({}, document.title, url.toString());
-        } catch (e) { /* no-op */ }
+        } catch (e) { }
       }
     })();
   </script>

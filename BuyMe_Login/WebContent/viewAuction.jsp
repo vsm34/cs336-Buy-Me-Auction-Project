@@ -13,7 +13,7 @@
     String aIdStr = request.getParameter("A_ID");
 
     if (aIdStr == null) {
-        out.println("<p style='color:red;'>No auction selected.</p>");
+        out.println("<div class='page'><p style='color:red;'>No auction selected.</p></div>");
         return;
     }
 
@@ -21,7 +21,7 @@
     try {
         A_ID = Integer.parseInt(aIdStr);
     } catch (NumberFormatException e) {
-        out.println("<p style='color:red;'>Invalid auction ID.</p>");
+        out.println("<div class='page'><p style='color:red;'>Invalid auction ID.</p></div>");
         return;
     }
 
@@ -30,9 +30,11 @@
     PreparedStatement psTop = null;
     PreparedStatement psBids = null;
     PreparedStatement psView = null;
+    PreparedStatement psSimilar = null;
     ResultSet rsAuction = null;
     ResultSet rsTop = null;
     ResultSet rsBids = null;
+    ResultSet rsSimilar = null;
 
     String auctionName = null;
     String seller = null;
@@ -42,12 +44,11 @@
     java.sql.Time closeTime = null;
     boolean closed = false;
     float startPrice = 0f;
-    float reserve = 0f;
     float displayPrice = 0f;   // what we show as "Current Price"
     float topPrice = 0f;       // highest bid, if any
     String topUser = null;     // username of highest bidder, if any
     boolean hasAnyBid = false;
-    String outcomeMessage = null;  // winner / reserve message
+    String outcomeMessage = null;  // winner message
     Integer lastBidIdForView = null; // for views_previous logging
 %>
 
@@ -69,7 +70,9 @@ try {
 
     if (!rsAuction.next()) {
 %>
-        <p style="color:red;">Auction not found.</p>
+        <div class="page">
+            <p style="color:red;">Auction not found.</p>
+        </div>
 <%
         rsAuction.close();
         psAuction.close();
@@ -79,7 +82,6 @@ try {
 
     auctionName = rsAuction.getString("Name");
     startPrice  = rsAuction.getFloat("Price");
-    reserve     = rsAuction.getFloat("Reserve");
     closed      = rsAuction.getBoolean("Closed");
     closeDate   = rsAuction.getDate("CloseDate");
     closeTime   = rsAuction.getTime("CloseTime");
@@ -125,28 +127,20 @@ try {
     rsTop.close();
     psTop.close();
 
-    // 3) Decide outcome message (winner / reserve not met) if closed
+    // 3) Decide outcome message if closed
     if (closed) {
         if (!hasAnyBid) {
             outcomeMessage = "Auction closed. No bids were placed; no winner.";
+        } else if (topUser != null && topUser.equals(username)) {
+            outcomeMessage = String.format(
+                "Auction closed. You won this auction with a bid of $%.2f!",
+                topPrice
+            );
         } else {
-            boolean reserveMet = (topPrice >= reserve);
-            if (!reserveMet) {
-                outcomeMessage = String.format(
-                    "Auction closed. Reserve price of $%.2f was not met; no winner.",
-                    reserve
-                );
-            } else if (topUser != null && topUser.equals(username)) {
-                outcomeMessage = String.format(
-                    "Auction closed. You won this auction with a bid of $%.2f!",
-                    topPrice
-                );
-            } else {
-                outcomeMessage = String.format(
-                    "Auction closed. Winning bid was $%.2f.",
-                    topPrice
-                );
-            }
+            outcomeMessage = String.format(
+                "Auction closed. Winning bid was $%.2f.",
+                topPrice
+            );
         }
     }
 %>
@@ -171,7 +165,8 @@ try {
     <% if (!closed) { %>
         <p>
             <a href="placeBid.jsp?A_ID=<%= A_ID %>">Place a Bid</a> |
-            <a href="watchList.jsp?action=add&A_ID=<%= A_ID %>">Add to Watchlist</a>
+            <a href="watchList.jsp?action=add&A_ID=<%= A_ID %>">Add to Watchlist</a> |
+            <a href="setAlert.jsp?A_ID=<%= A_ID %>">Set Alert</a>
         </p>
     <% } else { %>
         <p style="color:gray;">
@@ -234,24 +229,84 @@ try {
             if (psView != null) try { psView.close(); } catch (Exception e) {}
         }
     }
+%>
+    </table>
+
+    <h3>Similar Auctions in the Last 30 Days</h3>
+<%
+    // 6) Similar items: same subcategory, closed in roughly the last 30 days
+    if (subcat != null && !subcat.isEmpty()) {
+        psSimilar = conn.prepareStatement(
+            "SELECT A_ID, Name, Price, CloseDate, CloseTime " +
+            "FROM auction " +
+            "WHERE Subcategory = ? " +
+            "  AND Closed = 1 " +
+            "  AND A_ID <> ? " +
+            "  AND CloseDate BETWEEN DATE_SUB(CURDATE(), INTERVAL 30 DAY) AND CURDATE() " +
+            "ORDER BY CloseDate DESC, CloseTime DESC " +
+            "LIMIT 10"
+        );
+        psSimilar.setString(1, subcat);
+        psSimilar.setInt(2, A_ID);
+        rsSimilar = psSimilar.executeQuery();
+
+        boolean hasSimilar = false;
+%>
+        <table border="1" cellspacing="0" cellpadding="5">
+            <tr>
+                <th>Auction ID</th>
+                <th>Item</th>
+                <th>Starting Price</th>
+                <th>Closed On</th>
+                <th>View</th>
+            </tr>
+<%
+        while (rsSimilar.next()) {
+            hasSimilar = true;
+%>
+            <tr>
+                <td><%= rsSimilar.getInt("A_ID") %></td>
+                <td><%= rsSimilar.getString("Name") %></td>
+                <td>$<%= String.format("%.2f", rsSimilar.getFloat("Price")) %></td>
+                <td><%= rsSimilar.getDate("CloseDate") %> <%= rsSimilar.getTime("CloseTime") %></td>
+                <td><a href="viewAuction.jsp?A_ID=<%= rsSimilar.getInt("A_ID") %>">View</a></td>
+            </tr>
+<%
+        }
+
+        if (!hasSimilar) {
+%>
+            <tr>
+                <td colspan="5">No similar auctions found in the last 30 days.</td>
+            </tr>
+<%
+        }
+
+        if (rsSimilar != null) try { rsSimilar.close(); } catch (Exception e) {}
+        if (psSimilar != null) try { psSimilar.close(); } catch (Exception e) {}
+    } else {
+%>
+        <p>No subcategory information available for this auction.</p>
+<%
+    }
 
 } catch (Exception e) {
 %>
-        <tr>
-            <td colspan="3" style="color:red;">
-                Error loading bids: <%= e.getMessage() %>
-            </td>
-        </tr>
+    <p style="color:red;">
+        Error loading auction: <%= e.getMessage() %>
+    </p>
 <%
 } finally {
     if (rsAuction != null) try { rsAuction.close(); } catch (Exception e) {}
     if (rsTop != null) try { rsTop.close(); } catch (Exception e) {}
     if (rsBids != null) try { rsBids.close(); } catch (Exception e) {}
+    if (rsSimilar != null) try { rsSimilar.close(); } catch (Exception e) {}
     if (psAuction != null) try { psAuction.close(); } catch (Exception e) {}
     if (psTop != null) try { psTop.close(); } catch (Exception e) {}
     if (psBids != null) try { psBids.close(); } catch (Exception e) {}
+    if (psSimilar != null) try { psSimilar.close(); } catch (Exception e) {}
     if (conn != null) try { conn.close(); } catch (Exception e) {}
 }
 %>
-    </table>
 </div>
+

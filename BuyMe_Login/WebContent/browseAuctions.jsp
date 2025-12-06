@@ -1,149 +1,75 @@
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="java.sql.*, java.util.*, utils.DBConnection" %>
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+
 <%@ include file="header.jsp" %>
 
 <%
-    // Must be logged in as a normal user
-    if (role == null || !"user".equals(role) || currentUser == null) {
-        response.sendRedirect("login.jsp");
-        return;
-    }
-
-    String username = currentUser;
-
+    // Filters from query string
     request.setCharacterEncoding("UTF-8");
 
-    String subcatParam      = request.getParameter("subcategory");
-    String minPriceStr      = request.getParameter("minPrice");
-    String maxPriceStr      = request.getParameter("maxPrice");
-    String statusFilterParam= request.getParameter("statusFilter"); // "", "open", "closed"
+    String subcategory = request.getParameter("subcategory");
+    String status      = request.getParameter("status");     // "all", "open", "closed"
+    String keyword     = request.getParameter("keyword");
+    String minStr      = request.getParameter("minPrice");
+    String maxStr      = request.getParameter("maxPrice");
+    String sortBy      = request.getParameter("sortBy");     // "closeDate", "currentBid"
+    String sortDir     = request.getParameter("sortDir");    // "asc", "desc"
+
+    if (subcategory == null) subcategory = "All";
+    if (status == null)      status      = "all";
+    if (sortBy == null)      sortBy      = "closeDate";
+    if (sortDir == null)     sortDir     = "asc";
 
     Float minPrice = null;
     Float maxPrice = null;
-
-    try {
-        if (minPriceStr != null && !minPriceStr.isEmpty()) {
-            minPrice = Float.parseFloat(minPriceStr);
-        }
-        if (maxPriceStr != null && !maxPriceStr.isEmpty()) {
-            maxPrice = Float.parseFloat(maxPriceStr);
-        }
-    } catch (NumberFormatException e) {
-        // Invalid price inputs -> ignore and show everything
-        minPrice = null;
-        maxPrice = null;
-    }
-
-    Connection conn = null;
-    PreparedStatement ps = null;
-    ResultSet rs = null;
+    try { if (minStr != null && !minStr.isEmpty()) minPrice = Float.parseFloat(minStr); } catch (Exception ignore) {}
+    try { if (maxStr != null && !maxStr.isEmpty()) maxPrice = Float.parseFloat(maxStr); } catch (Exception ignore) {}
 %>
 
 <div class="page">
     <h2>Browse Auctions</h2>
 
-    <form method="get" action="browseAuctions.jsp" style="margin-bottom: 16px;">
-        <label>Subcategory: </label>
+    <form method="get" action="browseAuctions.jsp" style="margin-bottom: 12px;">
+        Subcategory:
         <select name="subcategory">
-            <option value="">All</option>
-            <option value="streetwear" <%= "streetwear".equals(subcatParam) ? "selected" : "" %>>Streetwear</option>
-            <option value="basketball" <%= "basketball".equals(subcatParam) ? "selected" : "" %>>Basketball</option>
-            <option value="tennis"     <%= "tennis".equals(subcatParam) ? "selected" : "" %>>Tennis</option>
-            <option value="golf"       <%= "golf".equals(subcatParam) ? "selected" : "" %>>Golf</option>
+            <option value="All"   <%= "All".equals(subcategory) ? "selected" : "" %>>All</option>
+            <option value="golf"  <%= "golf".equals(subcategory) ? "selected" : "" %>>golf</option>
+            <option value="basketball" <%= "basketball".equals(subcategory) ? "selected" : "" %>>basketball</option>
+            <option value="tennis" <%= "tennis".equals(subcategory) ? "selected" : "" %>>tennis</option>
+            <option value="streetwear" <%= "streetwear".equals(subcategory) ? "selected" : "" %>>streetwear</option>
         </select>
 
-        &nbsp;&nbsp;
-
-        <label>Status:</label>
-        <select name="statusFilter">
-            <option value="" <%= (statusFilterParam == null || statusFilterParam.isEmpty()) ? "selected" : "" %>>
-                All
-            </option>
-            <option value="open" <%= "open".equals(statusFilterParam) ? "selected" : "" %>>
-                Open
-            </option>
-            <option value="closed" <%= "closed".equals(statusFilterParam) ? "selected" : "" %>>
-                Closed
-            </option>
+        &nbsp; Status:
+        <select name="status">
+            <option value="all"    <%= "all".equals(status) ? "selected" : "" %>>All</option>
+            <option value="open"   <%= "open".equals(status) ? "selected" : "" %>>Open</option>
+            <option value="closed" <%= "closed".equals(status) ? "selected" : "" %>>Closed</option>
         </select>
 
-        &nbsp;&nbsp;
+        &nbsp; Keyword:
+        <input type="text" name="keyword" value="<%= (keyword == null ? "" : keyword) %>"
+               placeholder="Search by name / type">
 
-        <label>Min Price:</label>
-        <input type="text" name="minPrice" value="<%= (minPriceStr != null ? minPriceStr : "") %>" />
+        &nbsp; Min Price:
+        <input type="text" name="minPrice" size="6" value="<%= (minStr == null ? "" : minStr) %>">
+        &nbsp; Max Price:
+        <input type="text" name="maxPrice" size="6" value="<%= (maxStr == null ? "" : maxStr) %>">
 
-        <label>Max Price:</label>
-        <input type="text" name="maxPrice" value="<%= (maxPriceStr != null ? maxPriceStr : "") %>" />
+        &nbsp; Sort by:
+        <select name="sortBy">
+            <option value="closeDate"  <%= "closeDate".equals(sortBy) ? "selected" : "" %>>Close Date</option>
+            <option value="currentBid" <%= "currentBid".equals(sortBy) ? "selected" : "" %>>Current Highest Bid</option>
+        </select>
 
-        <button type="submit">Search</button>
+        <select name="sortDir">
+            <option value="asc"  <%= "asc".equalsIgnoreCase(sortDir) ? "selected" : "" %>>Ascending</option>
+            <option value="desc" <%= "desc".equalsIgnoreCase(sortDir) ? "selected" : "" %>>Descending</option>
+        </select>
+
+        &nbsp; <button type="submit">Search</button>
     </form>
 
-<%
-try {
-    conn = DBConnection.getConnection();
-
-    // Base query: show all auctions, compute current highest bid
-    StringBuilder sql = new StringBuilder(
-        "SELECT a.A_ID, a.Name, a.Price AS StartPrice, a.Subcategory, a.SubAttribute, " +
-        "       a.CloseDate, a.CloseTime, a.Closed, " +
-        "       COALESCE(MAX(b.Price), a.Price) AS CurrentPrice " +
-        "FROM auction a " +
-        "JOIN posts p ON a.A_ID = p.A_ID " +
-        "LEFT JOIN bids_on bo ON a.A_ID = bo.A_ID " +
-        "LEFT JOIN bids b ON bo.BID_ID = b.BID_ID " +
-        "WHERE 1=1 "  // we'll add filters below
-    );
-
-    List<Object> params = new ArrayList<Object>();
-
-    // Status filter: open / closed / (none = all)
-    if ("open".equals(statusFilterParam)) {
-        sql.append(" AND a.Closed = 0 ");
-    } else if ("closed".equals(statusFilterParam)) {
-        sql.append(" AND a.Closed = 1 ");
-    }
-
-    // Subcategory filter
-    if (subcatParam != null && !subcatParam.isEmpty()) {
-        sql.append(" AND a.Subcategory = ? ");
-        params.add(subcatParam);
-    }
-
-    // Price filters (use starting price as base filter)
-    if (minPrice != null) {
-        sql.append(" AND a.Price >= ? ");
-        params.add(minPrice);
-    }
-    if (maxPrice != null) {
-        sql.append(" AND a.Price <= ? ");
-        params.add(maxPrice);
-    }
-
-    sql.append(
-        "GROUP BY a.A_ID, a.Name, a.Price, a.Subcategory, a.SubAttribute, " +
-        "         a.CloseDate, a.CloseTime, a.Closed " +
-        "ORDER BY a.CloseDate, a.CloseTime"
-    );
-
-    ps = conn.prepareStatement(sql.toString());
-
-    int idx = 1;
-    for (Object o : params) {
-        if (o instanceof String) {
-            ps.setString(idx++, (String) o);
-        } else if (o instanceof Float) {
-            ps.setFloat(idx++, (Float) o);
-        }
-    }
-
-    rs = ps.executeQuery();
-
-    boolean hasAny = false;
-
-    // Only log into 'searches' if user actually set a price filter
-    boolean shouldLogSearch = (minPrice != null || maxPrice != null);
-%>
-    <table border="1" cellspacing="0" cellpadding="5">
+    <table border="1" cellpadding="4" cellspacing="0">
         <tr>
             <th>Auction ID</th>
             <th>Item</th>
@@ -155,83 +81,120 @@ try {
             <th>Closes</th>
             <th>Actions</th>
         </tr>
+
 <%
-    while (rs.next()) {
-        hasAny = true;
-        int   aId          = rs.getInt("A_ID");
-        String name        = rs.getString("Name");
-        String subcat      = rs.getString("Subcategory");
-        String subAttr     = rs.getString("SubAttribute");
-        float startPrice   = rs.getFloat("StartPrice");
-        float currentPrice = rs.getFloat("CurrentPrice");
-        java.sql.Date cd   = rs.getDate("CloseDate");
-        java.sql.Time ct   = rs.getTime("CloseTime");
-        boolean closedFlag = rs.getBoolean("Closed");
+    StringBuilder sql = new StringBuilder(
+        "SELECT a.A_ID, a.Name, a.Subcategory, a.SubAttribute, a.Price AS startPrice, " +
+        "       a.CloseDate, a.CloseTime, a.Closed, " +
+        "       COALESCE(MAX(b.Price), a.Price) AS currentBid " +
+        "FROM auction a " +
+        "LEFT JOIN bids_on bo ON a.A_ID = bo.A_ID " +
+        "LEFT JOIN bids b     ON bo.BID_ID = b.BID_ID " +
+        "WHERE 1=1 "
+    );
 
-        String statusLabel = closedFlag ? "Closed" : "Open";
+    List<Object> params = new ArrayList<>();
 
-        // Log this search into 'searches' table if user set a price filter
-        if (shouldLogSearch) {
-            PreparedStatement psSearch = null;
-            try {
-                psSearch = conn.prepareStatement(
-                    "INSERT INTO searches (Min_Price, Max_Price, Username, A_ID) " +
-                    "VALUES (?, ?, ?, ?) " +
-                    "ON DUPLICATE KEY UPDATE Min_Price = VALUES(Min_Price), Max_Price = VALUES(Max_Price)"
-                );
-                if (minPrice != null) {
-                    psSearch.setFloat(1, minPrice);
-                } else {
-                    psSearch.setNull(1, java.sql.Types.FLOAT);
-                }
-                if (maxPrice != null) {
-                    psSearch.setFloat(2, maxPrice);
-                } else {
-                    psSearch.setNull(2, java.sql.Types.FLOAT);
-                }
-                psSearch.setString(3, username);
-                psSearch.setInt(4, aId);
-                psSearch.executeUpdate();
-            } catch (SQLException eIgnore) {
-                // ignore logging errors
-            } finally {
-                if (psSearch != null) try { psSearch.close(); } catch (Exception e) {}
-            }
+    // Subcategory filter
+    if (subcategory != null && !"All".equals(subcategory)) {
+        sql.append(" AND a.Subcategory = ? ");
+        params.add(subcategory);
+    }
+
+    // Status filter, computed by time and Closed flag
+    if ("open".equalsIgnoreCase(status)) {
+        sql.append(" AND a.Closed = 0 AND TIMESTAMP(a.CloseDate, a.CloseTime) > NOW() ");
+    } else if ("closed".equalsIgnoreCase(status)) {
+        sql.append(" AND (a.Closed = 1 OR TIMESTAMP(a.CloseDate, a.CloseTime) <= NOW()) ");
+    }
+
+    // Keyword filter (name / subcategory / attribute)
+    if (keyword != null && !keyword.trim().isEmpty()) {
+        String like = "%" + keyword.trim() + "%";
+        sql.append(" AND (a.Name LIKE ? OR a.Subcategory LIKE ? OR a.SubAttribute LIKE ?) ");
+        params.add(like);
+        params.add(like);
+        params.add(like);
+    }
+
+    // Price range on starting price
+    if (minPrice != null) {
+        sql.append(" AND a.Price >= ? ");
+        params.add(minPrice);
+    }
+    if (maxPrice != null) {
+        sql.append(" AND a.Price <= ? ");
+        params.add(maxPrice);
+    }
+
+    sql.append(
+        " GROUP BY a.A_ID, a.Name, a.Subcategory, a.SubAttribute, " +
+        "          a.Price, a.CloseDate, a.CloseTime, a.Closed "
+    );
+
+    // Sort clause – whitelist columns
+    String orderClause;
+    if ("currentBid".equals(sortBy)) {
+        orderClause = "currentBid";
+    } else {
+        // default: close date/time
+        orderClause = "a.CloseDate, a.CloseTime";
+    }
+
+    String dir = "DESC".equalsIgnoreCase(sortDir) ? "DESC" : "ASC";
+    sql.append(" ORDER BY " + orderClause + " " + dir);
+
+    try (Connection conn = DBConnection.getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+
+        // bind parameters
+        int idx = 1;
+        for (Object p : params) {
+            if (p instanceof String)  ps.setString(idx++, (String)p);
+            else if (p instanceof Float) ps.setFloat(idx++, (Float)p);
+            else                       ps.setObject(idx++, p);
         }
+
+        try (ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                int    aId     = rs.getInt("A_ID");
+                String name    = rs.getString("Name");
+                String subcat  = rs.getString("Subcategory");
+                String attr    = rs.getString("SubAttribute");
+                float  start   = rs.getFloat("startPrice");
+                float  currBid = rs.getFloat("currentBid");
+                java.sql.Date cDate = rs.getDate("CloseDate");
+                java.sql.Time cTime = rs.getTime("CloseTime");
+                boolean closedFlag  = rs.getBoolean("Closed");
+
+                // Derive display status from time + flag
+                boolean isClosed = closedFlag ||
+                                   (cDate != null && cTime != null &&
+                                    (new java.sql.Timestamp(
+                                         cDate.getTime() + cTime.getTime()
+                                     ).before(new java.sql.Timestamp(System.currentTimeMillis()))));
+
+                String statusLabel = isClosed ? "Closed" : "Open";
 %>
         <tr>
             <td><%= aId %></td>
             <td><%= name %></td>
-            <td><%= subcat %></td>
-            <td><%= subAttr %></td>
-            <td>$<%= String.format("%.2f", startPrice) %></td>
-            <td>$<%= String.format("%.2f", currentPrice) %></td>
+            <td><%= (subcat == null ? "-" : subcat) %></td>
+            <td><%= (attr == null ? "-" : attr) %></td>
+            <td>$<%= String.format("%.2f", start) %></td>
+            <td>$<%= String.format("%.2f", currBid) %></td>
             <td><%= statusLabel %></td>
-            <td><%= cd %> <%= ct %></td>
-            <td>
-                <a href="viewAuction.jsp?A_ID=<%= aId %>">View</a>
-            </td>
+            <td><%= cDate %> <%= cTime %></td>
+            <td><a href="viewAuction.jsp?A_ID=<%= aId %>">View</a></td>
         </tr>
 <%
-    } // end while
-
-    if (!hasAny) {
+            }
+        }
+    } catch (Exception e) {
 %>
-        <tr>
-            <td colspan="9">No matching auctions found.</td>
-        </tr>
+        <tr><td colspan="9" style="color:red;">Error loading auctions: <%= e.getMessage() %></td></tr>
 <%
     }
-
-} catch (SQLException e) {
-%>
-    <p style="color:red;">Error: <%= e.getMessage() %></p>
-<%
-} finally {
-    if (rs != null) try { rs.close(); } catch (Exception e) {}
-    if (ps != null) try { ps.close(); } catch (Exception e) {}
-    if (conn != null) try { conn.close(); } catch (Exception e) {}
-}
 %>
     </table>
 </div>

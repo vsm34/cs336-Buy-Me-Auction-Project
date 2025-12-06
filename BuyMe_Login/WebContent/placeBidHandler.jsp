@@ -62,11 +62,12 @@
         conn = DBConnection.getConnection();
         conn.setAutoCommit(false);  // everything in one transaction
 
-        // 1) Load auction and ensure it's open
+        // 1) Load auction, ensure it's open, and find seller
         ps = conn.prepareStatement(
-            "SELECT Closed, Price, Reserve " +
-            "FROM auction " +
-            "WHERE A_ID = ?"
+            "SELECT a.Closed, a.Price, a.Reserve, p.Username AS SellerUsername " +
+            "FROM auction a " +
+            "LEFT JOIN posts p ON a.A_ID = p.A_ID " +
+            "WHERE a.A_ID = ?"
         );
         ps.setInt(1, A_ID);
         rs = ps.executeQuery();
@@ -80,10 +81,20 @@
         boolean closed = rs.getBoolean("Closed");
         float auctionStartPrice = rs.getFloat("Price");
         float reserve = rs.getFloat("Reserve");
+        String seller = rs.getString("SellerUsername");
         rs.close(); ps.close();
+
+        // Block seller from bidding on own auction
+        if (seller != null && seller.equals(username)) {
+            session.setAttribute("flash", "You cannot bid on your own auction.");
+            conn.rollback();
+            response.sendRedirect("viewAuction.jsp?A_ID=" + A_ID);
+            return;
+        }
 
         if (closed) {
             session.setAttribute("flash", "This auction is closed. You cannot bid.");
+            conn.rollback();
             response.sendRedirect("viewAuction.jsp?A_ID=" + A_ID);
             return;
         }
@@ -166,18 +177,7 @@
             ps.close();
         }
 
-        // 6) AUTO-BID RESOLUTION LOOP
-        //
-        // Idea:
-        //  - While some auto-bidder can beat the current highest price,
-        //    create a new bid for that auto-bidder at:
-        //      min(buy_limit, current_price + increment)
-        //  - Repeat until nobody can outbid.
-        //
-        // We keep using the auction's full bid history; manual bids are fixed,
-        // auto-bidders may place multiple bids. We do NOT duplicate autobid rows;
-        // we only update autobid.Current when they raise.
-
+        // 6) AUTO-BID RESOLUTION LOOP (unchanged)
         boolean changed = true;
         while (changed) {
             changed = false;
@@ -253,8 +253,7 @@
             }
 
             if (proposed <= topPrice) {
-                // can't actually outbid
-                continue;
+                continue; // can't actually outbid
             }
 
             // Create a new bid on behalf of this auto-bidder
