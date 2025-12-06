@@ -3,7 +3,7 @@
 <%@ include file="header.jsp" %>
 
 <%
-    // Only admins can see this page
+    //admin only view
     if (role == null || !"admin".equals(role)) {
         response.sendRedirect("adminLogin.jsp?error=Admin+login+required");
         return;
