@@ -6,13 +6,13 @@ import java.sql.SQLException;
 
 public class DBConnection {
 
-    // ⚠️ Make sure the DB name here matches your schema: "buyme"
+    
     private static final String URL =
         "jdbc:mysql://localhost:3306/buyme?useSSL=false&serverTimezone=UTC";
 
-    // ⚠️ Change these to whatever you use in MySQL Workbench
-    private static final String USER = "root";          // or your MySQL username
-    private static final String PASSWORD = "root"; // "" if no password
+    
+    private static final String USER = "root";          //  MySQL username
+    private static final String PASSWORD = "root";     //   MySQL password       
 
     static {
         try {
