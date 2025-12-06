@@ -3,7 +3,7 @@
 <%@ include file="header.jsp" %>
 
 <%
-    // Only regular end users
+
     if (role == null || !"user".equals(role) || currentUser == null) {
         response.sendRedirect("login.jsp");
         return;
@@ -28,7 +28,7 @@
 try {
     conn = DBConnection.getConnection();
 
-    // --- CLOSED AUCTIONS USER BID ON ---
+
     psClosed = conn.prepareStatement(
         "SELECT DISTINCT a.A_ID, a.Name, a.CloseDate, a.CloseTime, a.Reserve " +
         "FROM auction a " +
@@ -112,7 +112,7 @@ try {
       <td><a href="viewAuction.jsp?A_ID=<%= aId %>">View</a></td>
     </tr>
 <%
-    } // end closed loop
+    } 
     if (!anyClosed) {
 %>
     <tr><td colspan="6">No closed auctions yet.</td></tr>
@@ -124,7 +124,7 @@ try {
   <br/>
 
 <%
-    // --- OPEN AUCTIONS USER BID ON ---
+
     psOpen = conn.prepareStatement(
         "SELECT DISTINCT a.A_ID, a.Name, a.CloseDate, a.CloseTime " +
         "FROM auction a " +
@@ -186,7 +186,7 @@ try {
       <td><a href="viewAuction.jsp?A_ID=<%= aId %>">View / Bid</a></td>
     </tr>
 <%
-    } // end open loop
+    } 
     if (!anyOpen) {
 %>
     <tr><td colspan="6">You are not bidding on any open auctions right now.</td></tr>
