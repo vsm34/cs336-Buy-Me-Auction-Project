@@ -48,7 +48,7 @@
         psAuction.setString(1, name);
         psAuction.setFloat(2, price);
         psAuction.setDate(3, java.sql.Date.valueOf(closeDateStr));
-        psAuction.setTime(4, java.sql.Time.valueOf(closeTimeStr + ":00")); // if time input lacks seconds
+        psAuction.setTime(4, java.sql.Time.valueOf(closeTimeStr + ":00")); 
         psAuction.setString(5, subcategory);
         psAuction.setString(6, (subattr == null || subattr.isEmpty()) ? null : subattr);
         psAuction.setFloat(7, reserve);
@@ -65,7 +65,7 @@
             throw new SQLException("Failed to obtain new auction ID.");
         }
 
-        // Insert into posts so we know who the seller is
+        
         psPost = conn.prepareStatement(
             "INSERT INTO posts (PostDate, Username, A_ID) VALUES (CURDATE(), ?, ?)"
         );
