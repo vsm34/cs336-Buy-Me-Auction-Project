@@ -3,7 +3,7 @@
 <%@ include file="header.jsp" %>
 
 <%
-    // Requires a logged in end_user
+    // Require a logged in end_user
     if (role == null || !"user".equals(role) || currentUser == null) {
         response.sendRedirect("login.jsp");
         return;
@@ -11,7 +11,7 @@
 
     String username = currentUser;
 
-   
+  
     String aIdStr = request.getParameter("A_ID");
     if (aIdStr == null) {
         out.println("<div class='page'><p style='color:red;'>No auction selected.</p></div>");
@@ -32,7 +32,7 @@
     try {
         conn = DBConnection.getConnection();
 
-       
+        
         ps = conn.prepareStatement(
             "SELECT a.Name, a.Price, a.Closed, " +
             "       COALESCE(MAX(b.Price), a.Price) AS CurrentPrice, " +
@@ -124,4 +124,5 @@
 
   <%
     } 
+  %>
 </div>
