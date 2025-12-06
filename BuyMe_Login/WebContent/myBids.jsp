@@ -3,7 +3,7 @@
 <%@ include file="header.jsp" %>
 
 <%
-    // Only logged-in end_user can see this page
+
     if (role == null || !"user".equals(role) || currentUser == null) {
         response.sendRedirect("login.jsp");
         return;
@@ -39,7 +39,7 @@
     try {
         conn = DBConnection.getConnection();
 
-        // 1) All auctions this user has ever bid on
+
         psAucs = conn.prepareStatement(
             "SELECT DISTINCT bo.A_ID, a.Name, a.Closed, a.Reserve, a.CloseDate, a.CloseTime " +
             "FROM places pl " +
@@ -50,7 +50,7 @@
         psAucs.setString(1, username);
         rsAucs = psAucs.executeQuery();
 
-        // Prepared statements reused for each auction
+
         psTop = conn.prepareStatement(
             "SELECT b.Price, pl.Username " +
             "FROM bids b " +
@@ -88,7 +88,7 @@
             java.sql.Date cDate = rsAucs.getDate("CloseDate");
             java.sql.Time cTime = rsAucs.getTime("CloseTime");
 
-            // 2) Highest bid overall for this auction
+
             float topPrice = 0f;
             String topUser = null;
             psTop.setInt(1, aId);
@@ -99,7 +99,7 @@
             }
             rs.close();
 
-            // 3) This user's last bid on this auction
+
             Float userLastBid = null;
             psUserLast.setInt(1, aId);
             psUserLast.setString(2, username);
@@ -109,7 +109,7 @@
             }
             rs.close();
 
-            // 4) This user's auto-bid limit on this auction (if any)
+
             Float autoLimit = null;
             psAuto.setInt(1, aId);
             psAuto.setString(2, username);
@@ -124,24 +124,23 @@
             boolean reserveMet  = (topPrice >= reserve && topPrice > 0);
             String alert = "";
 
-            // --- ALERT LOGIC ---
 
-            // Manual outbid: auction still open AND user is not the highest bidder
+
+
             if (!closed && userLastBid != null && !userIsTop) {
                 alert = "You have been outbid.";
             }
 
-            // Auto-bid limit exceeded: auction open, user has auto-bid, someone else on top, and price > limit
+
             if (!closed && autoLimit != null && topPrice > autoLimit && !userIsTop) {
                 if (!alert.isEmpty()) alert += " ";
                 alert += "Your auto-bid limit has been exceeded.";
             }
 
-            // Winner: auction closed, user is highest, and reserve met
             if (closed && userIsTop && reserveMet) {
                 alert = "You have won this auction!";
             } else if (closed && !reserveMet && userLastBid != null) {
-                // Optional informational message if user was involved but reserve not met
+
                 if (alert.isEmpty()) {
                     alert = "Auction closed; reserve not met (no winner).";
                 }
@@ -158,7 +157,7 @@
             <td><a href="viewAuction.jsp?A_ID=<%= aId %>">View</a></td>
         </tr>
 <%
-        } // end while
+        } 
 
     } catch (Exception e) {
 %>
