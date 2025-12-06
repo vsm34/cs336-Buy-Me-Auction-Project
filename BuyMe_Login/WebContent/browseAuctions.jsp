@@ -4,7 +4,7 @@
 <%@ include file="header.jsp" %>
 
 <%
-    // Filters from query string
+
     request.setCharacterEncoding("UTF-8");
 
     String subcategory = request.getParameter("subcategory");
@@ -95,20 +95,18 @@
 
     List<Object> params = new ArrayList<>();
 
-    // Subcategory filter
+    //Subcategory filter
     if (subcategory != null && !"All".equals(subcategory)) {
         sql.append(" AND a.Subcategory = ? ");
         params.add(subcategory);
     }
 
-    // Status filter, computed by time and Closed flag
     if ("open".equalsIgnoreCase(status)) {
         sql.append(" AND a.Closed = 0 AND TIMESTAMP(a.CloseDate, a.CloseTime) > NOW() ");
     } else if ("closed".equalsIgnoreCase(status)) {
         sql.append(" AND (a.Closed = 1 OR TIMESTAMP(a.CloseDate, a.CloseTime) <= NOW()) ");
     }
 
-    // Keyword filter (name / subcategory / attribute)
     if (keyword != null && !keyword.trim().isEmpty()) {
         String like = "%" + keyword.trim() + "%";
         sql.append(" AND (a.Name LIKE ? OR a.Subcategory LIKE ? OR a.SubAttribute LIKE ?) ");
@@ -132,12 +130,12 @@
         "          a.Price, a.CloseDate, a.CloseTime, a.Closed "
     );
 
-    // Sort clause – whitelist columns
+   
     String orderClause;
     if ("currentBid".equals(sortBy)) {
         orderClause = "currentBid";
     } else {
-        // default: close date/time
+        //default: close date/time
         orderClause = "a.CloseDate, a.CloseTime";
     }
 
@@ -147,7 +145,6 @@
     try (Connection conn = DBConnection.getConnection();
          PreparedStatement ps = conn.prepareStatement(sql.toString())) {
 
-        // bind parameters
         int idx = 1;
         for (Object p : params) {
             if (p instanceof String)  ps.setString(idx++, (String)p);
@@ -167,7 +164,6 @@
                 java.sql.Time cTime = rs.getTime("CloseTime");
                 boolean closedFlag  = rs.getBoolean("Closed");
 
-                // Derive display status from time + flag
                 boolean isClosed = closedFlag ||
                                    (cDate != null && cTime != null &&
                                     (new java.sql.Timestamp(
