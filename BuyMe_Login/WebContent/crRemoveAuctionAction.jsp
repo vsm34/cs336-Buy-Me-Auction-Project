@@ -10,7 +10,7 @@ if (!"cr".equals(role) || cridObj == null) {
 }
 int crid = cridObj;
 String aParam = request.getParameter("auctionId");
-String msgText;
+String msgText =null;
 String errText = null;
 if (aParam == null || aParam.isEmpty()) {
     errText = "Missing auction id.";
