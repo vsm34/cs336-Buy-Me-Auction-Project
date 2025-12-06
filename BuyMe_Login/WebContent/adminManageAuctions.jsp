@@ -15,14 +15,13 @@
     String method = request.getMethod();
     String action = request.getParameter("action");
 
-    // For optional filter (show only closed auctions)
     String closedOnlyParam = request.getParameter("closedOnly");
     boolean closedOnly = "on".equalsIgnoreCase(closedOnlyParam) || "1".equals(closedOnlyParam);
 
-    // For optional "view bids for this auction"
+
     String viewBidsFor = request.getParameter("viewBidsFor");
 
-    // ====== HANDLE DELETE ACTION (ADMIN DIRECT DELETE) ======
+    //admins delete stuff
     if ("POST".equalsIgnoreCase(method) && "delete".equals(action)) {
         String aidStr = request.getParameter("A_ID");
         if (aidStr != null && !aidStr.trim().isEmpty()) {
@@ -32,7 +31,7 @@
                 int aid = Integer.parseInt(aidStr.trim());
                 conn = DBConnection.getConnection();
 
-                // Admin direct delete (foreign keys handle bids_on, etc.)
+              
                 String sql = "DELETE FROM auction WHERE A_ID = ?";
                 ps = conn.prepareStatement(sql);
                 ps.setInt(1, aid);
