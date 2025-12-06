@@ -35,20 +35,20 @@
                 String dbPass = rs.getString("Password");
                 ok = password.equals(dbPass);
             } else {
-                ok = false;   // no such CRID
+                ok = false;   
             }
         }
 
     } catch (Exception e) {
-        e.printStackTrace();   // show full stack trace in Tomcat console
+        e.printStackTrace();   
         response.sendRedirect("crLogin.jsp?error=Database+error");
         return;
     }
 
     if (ok) {
-        // For CR pages:
-        //  - role is used by header.jsp to show the right nav
-        //  - crid can be used by CR-only JSPs when querying tables like deletes, removes, etc.
+      
+        //  - role is used by header.jsp
+        
         session.setAttribute("role", "cr");
         session.setAttribute("crid", crid);
         session.setAttribute("username", "CR-" + crid);  // just for display in header
