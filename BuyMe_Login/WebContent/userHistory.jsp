@@ -38,7 +38,7 @@ if (searchUser != null && !searchUser.isEmpty()) {
     try {
         conn = DBConnection.getConnection();
 
-        // Make sure the user exists
+
         psCheck = conn.prepareStatement(
             "SELECT Username FROM end_user WHERE Username = ?"
         );
@@ -50,7 +50,7 @@ if (searchUser != null && !searchUser.isEmpty()) {
   <p style="color:red;">No end_user with username &quot;<%= searchUser %>&quot; was found.</p>
 <%
         } else {
-            // 1) Auctions posted by this user
+
             psAuctions = conn.prepareStatement(
                 "SELECT a.A_ID, a.Name, a.Price, a.CloseDate, a.CloseTime, a.Closed " +
                 "FROM auction a " +
@@ -103,7 +103,7 @@ if (searchUser != null && !searchUser.isEmpty()) {
   <br/>
 
 <%
-            // 2) Bids placed by this user
+
             psBids = conn.prepareStatement(
                 "SELECT a.A_ID, a.Name, b.Price, b.Time, a.CloseDate, a.CloseTime, a.Closed " +
                 "FROM bids b " +
@@ -160,7 +160,7 @@ if (searchUser != null && !searchUser.isEmpty()) {
   </table>
 
 <%
-        } // end user exists
+        } 
     } catch (Exception e) {
 %>
   <p style="color:red;">Error loading history: <%= e.getMessage() %></p>
@@ -174,7 +174,7 @@ if (searchUser != null && !searchUser.isEmpty()) {
         if (psBids != null) try { psBids.close(); }    catch (Exception e) {}
         if (conn != null) try { conn.close(); }        catch (Exception e) {}
     }
-} // end if searchUser
+} 
 %>
 
 </div>
