@@ -20,7 +20,7 @@ try (Connection conn = DBConnection.getConnection()) {
 
             Integer alertId = null;
 
-            // find existing active alertset for this user
+
             try (PreparedStatement ps = conn.prepareStatement(
                     "SELECT Alert_ID FROM alertsets " +
                     "WHERE Username = ? AND isActive = 1 LIMIT 1")) {
@@ -32,7 +32,7 @@ try (Connection conn = DBConnection.getConnection()) {
                 }
             }
 
-            // if none, create new
+s
             if (alertId == null) {
                 try (PreparedStatement ps = conn.prepareStatement(
                         "INSERT INTO alertsets (isActive, DateCreated, Username) " +
@@ -48,7 +48,7 @@ try (Connection conn = DBConnection.getConnection()) {
                 }
             }
 
-            // add to watches if not already there
+
             if (alertId != null) {
                 try (PreparedStatement ps = conn.prepareStatement(
                         "SELECT 1 FROM watches WHERE Alert_ID = ? AND A_ID = ?")) {
