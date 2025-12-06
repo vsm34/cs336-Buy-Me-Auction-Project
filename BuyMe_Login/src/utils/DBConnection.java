@@ -12,7 +12,7 @@ public class DBConnection {
 
     // ⚠️ Change these to whatever you use in MySQL Workbench
     private static final String USER = "root";          // or your MySQL username
-    private static final String PASSWORD = "Srisai12"; // "" if no password
+    private static final String PASSWORD = "root"; // "" if no password
 
     static {
         try {
