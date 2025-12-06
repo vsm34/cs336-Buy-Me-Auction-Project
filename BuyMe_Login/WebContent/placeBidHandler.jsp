@@ -36,7 +36,7 @@
         return;
     }
 
-    // If both auto-bid fields are provided and positive, treat as an auto-bid
+
     boolean isAutoBid = false;
     try {
         if (buyLimitStr != null && !buyLimitStr.isEmpty() &&
@@ -50,7 +50,7 @@
             }
         }
     } catch (NumberFormatException e) {
-        // invalid auto-bid inputs -> treat as normal bid
+
         isAutoBid = false;
     }
 
@@ -60,9 +60,9 @@
 
     try {
         conn = DBConnection.getConnection();
-        conn.setAutoCommit(false);  // everything in one transaction
+        conn.setAutoCommit(false); 
 
-        // 1) Load auction, ensure it's open, and find seller
+
         ps = conn.prepareStatement(
             "SELECT a.Closed, a.Price, a.Reserve, p.Username AS SellerUsername " +
             "FROM auction a " +
@@ -84,7 +84,7 @@
         String seller = rs.getString("SellerUsername");
         rs.close(); ps.close();
 
-        // Block seller from bidding on own auction
+
         if (seller != null && seller.equals(username)) {
             session.setAttribute("flash", "You cannot bid on your own auction.");
             conn.rollback();
@@ -99,7 +99,7 @@
             return;
         }
 
-        // 2) Find current highest bid (if any)
+
         float currentPrice = auctionStartPrice;
         int    currentTopBidId = -1;
         String currentTopUser  = null;
@@ -122,7 +122,7 @@
         }
         rs.close(); ps.close();
 
-        // 3) Validate user's initial bid
+
         if (bidAmount <= currentPrice) {
             session.setAttribute("flash",
                 "Your bid must be higher than the current price ($" + currentPrice + ").");
@@ -131,7 +131,7 @@
             return;
         }
 
-        // 4) Insert the user's bid into bids, bids_on, places
+
         int userBidId = -1;
         ps = conn.prepareStatement(
             "INSERT INTO bids (Price, Time) VALUES (?, CURTIME())",
@@ -145,7 +145,7 @@
         }
         rs.close(); ps.close();
 
-        // Link bid to auction
+
         ps = conn.prepareStatement(
             "INSERT INTO bids_on (BID_ID, A_ID) VALUES (?, ?)"
         );
@@ -154,7 +154,7 @@
         ps.executeUpdate();
         ps.close();
 
-        // Who placed it
+
         ps = conn.prepareStatement(
             "INSERT INTO places (Username, BID_ID) VALUES (?, ?)"
         );
@@ -163,7 +163,7 @@
         ps.executeUpdate();
         ps.close();
 
-        // 5) If auto-bid, insert settings into autobid
+
         if (isAutoBid) {
             ps = conn.prepareStatement(
                 "INSERT INTO autobid (BID_ID, Increment, Buy_Limit, Current) " +
@@ -177,12 +177,12 @@
             ps.close();
         }
 
-        // 6) AUTO-BID RESOLUTION LOOP (unchanged)
+
         boolean changed = true;
         while (changed) {
             changed = false;
 
-            // Recompute current highest bid
+
             float topPrice = auctionStartPrice;
             String topUser = null;
 
@@ -203,7 +203,7 @@
             }
             rs.close(); ps.close();
 
-            // Gather all autobidders for this auction
+
             class AutoBidder {
                 int bidId;
                 String user;
@@ -230,7 +230,7 @@
                 ab.inc   = rs.getFloat("Increment");
                 ab.max   = rs.getFloat("Buy_Limit");
 
-                // can this autobidder still beat topPrice ?
+
                 if (!ab.user.equals(topUser) && ab.max > topPrice) {
                     candidates.add(ab);
                 }
@@ -238,10 +238,10 @@
             rs.close(); ps.close();
 
             if (candidates.isEmpty()) {
-                break; // no auto-bidder can raise further
+                break; 
             }
 
-            // Simple rule: pick the auto-bidder with the highest max limit
+
             AutoBidder best = candidates.get(0);
             for (AutoBidder ab : candidates) {
                 if (ab.max > best.max) best = ab;
@@ -253,10 +253,10 @@
             }
 
             if (proposed <= topPrice) {
-                continue; // can't actually outbid
+                continue;
             }
 
-            // Create a new bid on behalf of this auto-bidder
+
             int newBidId = -1;
             ps = conn.prepareStatement(
                 "INSERT INTO bids (Price, Time) VALUES (?, CURTIME())",
@@ -268,7 +268,7 @@
             if (rs.next()) newBidId = rs.getInt(1);
             rs.close(); ps.close();
 
-            // link to auction
+
             ps = conn.prepareStatement(
                 "INSERT INTO bids_on (BID_ID, A_ID) VALUES (?, ?)"
             );
@@ -277,7 +277,7 @@
             ps.executeUpdate();
             ps.close();
 
-            // who placed it
+
             ps = conn.prepareStatement(
                 "INSERT INTO places (Username, BID_ID) VALUES (?, ?)"
             );
@@ -286,7 +286,7 @@
             ps.executeUpdate();
             ps.close();
 
-            // update autobid.Current so DB shows their latest auto-bid amount
+
             ps = conn.prepareStatement(
                 "UPDATE autobid SET Current = ? WHERE BID_ID = ?"
             );
@@ -295,7 +295,7 @@
             ps.executeUpdate();
             ps.close();
 
-            changed = true; // run loop again
+            changed = true;
         }
 
         conn.commit();
