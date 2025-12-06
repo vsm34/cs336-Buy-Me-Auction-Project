@@ -3,7 +3,7 @@
 <%@ include file="header.jsp" %>
 
 <%
-    // Must be logged in as regular user
+
     if (role == null || !"user".equals(role) || currentUser == null) {
         response.sendRedirect("login.jsp");
         return;
@@ -30,7 +30,7 @@
     try {
         conn = DBConnection.getConnection();
 
-        // Get auction info + seller username
+
         ps = conn.prepareStatement(
             "SELECT a.Name, a.Price, a.Closed, p.Username AS SellerUsername " +
             "FROM auction a " +
@@ -67,12 +67,12 @@
   <p><b>Seller:</b> <%= (seller == null ? "-" : seller) %></p>
 
   <%
-    // If auction is closed
+
     if (closed) {
   %>
       <p style="color:red;">This auction is closed. You cannot bid.</p>
   <%
-    // If current user is the seller, do not allow bidding
+
     } else if (seller != null && seller.equals(username)) {
   %>
       <p style="color:red;">You created this auction and cannot bid on your own item.</p>
@@ -117,6 +117,6 @@
   </form>
 
   <%
-    } // end open/not-seller branch
+    }
   %>
 </div>
