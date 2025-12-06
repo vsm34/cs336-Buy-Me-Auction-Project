@@ -4,7 +4,7 @@
 <%@ include file="header.jsp" %>
 
 <%
-    // Only logged-in end users (buyers/sellers) can ask questions
+    // this is so only logged in users can post questions
     if (role == null || !"user".equals(role) || currentUser == null) {
         response.sendRedirect("login.jsp?error=Please+log+in+to+ask+questions");
         return;
