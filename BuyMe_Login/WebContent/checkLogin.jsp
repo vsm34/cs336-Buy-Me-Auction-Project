@@ -37,7 +37,7 @@
         }
 
     } catch (Exception e) {
-        e.printStackTrace(); // shows in Tomcat console
+        e.printStackTrace(); 
         response.sendRedirect("login.jsp?error=Database+error");
         return;
     }
@@ -47,7 +47,7 @@
         session.setAttribute("role", "user");   // for header.jsp
         response.sendRedirect("buyerSellerDashboard.jsp");
     } else {
-        // while debugging, include reason in query string (you can remove later)
+        
         if (debugMsg == null) debugMsg = "Invalid credentials";
         response.sendRedirect("login.jsp?error=" + java.net.URLEncoder.encode(debugMsg, "UTF-8"));
     }
