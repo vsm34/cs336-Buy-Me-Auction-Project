@@ -10,12 +10,12 @@
 <%
     String message = null;
 
-    // Which section did the user click on from the dashboard?
+    
     String view = request.getParameter("view");
     boolean showCreate = (view == null || "create".equalsIgnoreCase(view));
     boolean showDelete = (view == null || "delete".equalsIgnoreCase(view));
 
-    // ====== HANDLE FORM ACTIONS (CREATE / DELETE) ======
+
     String method = request.getMethod();
     String action = request.getParameter("action");
 
