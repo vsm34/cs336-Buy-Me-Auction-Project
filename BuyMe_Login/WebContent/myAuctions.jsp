@@ -3,7 +3,7 @@
 <%@ include file="header.jsp" %>
 
 <%
-    // Must be logged in as a normal user
+
     if (role == null || !"user".equals(role) || currentUser == null) {
         response.sendRedirect("login.jsp");
         return;
@@ -85,7 +85,7 @@
         </td>
       </tr>
     <%
-        } // end while
+        }
 
         if (!hasRows) {
     %>
