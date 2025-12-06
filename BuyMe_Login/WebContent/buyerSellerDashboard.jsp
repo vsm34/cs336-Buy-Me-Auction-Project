@@ -11,10 +11,10 @@
 <div class="page">
   <h2>Buyer / Seller Dashboard</h2>
   <ul>
-    <li><a href="#">Browse/Search Auctions</a></li>
-    <li><a href="#">My Bids</a></li>
-    <li><a href="#">My Auctions</a></li>
-    <li><a href="#">Create New Auction</a></li>
+    <li><a href="browseAuctions.jsp">Browse/Search Auctions</a></li>
+    <li><a href="myBids.jsp">My Bids</a></li>
+    <li><a href="myAuctions.jsp">My Auctions</a></li>
+    <li><a href="createAuction.jsp">Create New Auction</a></li> 
   </ul>
   <p>(Later these will link to the actual pages.)</p>
 </div>

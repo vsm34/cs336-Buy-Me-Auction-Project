@@ -1,0 +1,112 @@
+<%@ page import="java.sql.*, utils.DBConnection" %>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ include file="header.jsp" %>
+
+<%
+    // Must be logged in as regular user
+    if (role == null || !"user".equals(role) || currentUser == null) {
+        response.sendRedirect("login.jsp");
+        return;
+    }
+
+    String username = currentUser;
+    String aIdStr = request.getParameter("A_ID");
+    if (aIdStr == null) {
+        out.println("<div class='page'><p style='color:red;'>No auction selected.</p></div>");
+        return;
+    }
+
+    int A_ID = Integer.parseInt(aIdStr);
+
+    Connection conn = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+
+    String name = null;
+    float currentPrice = 0f;
+    boolean closed = false;
+
+    try {
+        conn = DBConnection.getConnection();
+
+        // Get auction info + current highest bid if any
+        ps = conn.prepareStatement(
+            "SELECT a.Name, a.Price, a.Closed " +
+            "FROM auction a " +
+            "WHERE a.A_ID = ?"
+        );
+        ps.setInt(1, A_ID);
+        rs = ps.executeQuery();
+
+        if (!rs.next()) {
+            out.println("<div class='page'><p style='color:red;'>Auction not found.</p></div>");
+            return;
+        }
+
+        name = rs.getString("Name");
+        currentPrice = rs.getFloat("Price");
+        closed = rs.getBoolean("Closed");
+
+    } catch (SQLException e) {
+        out.println("<div class='page'><p style='color:red;'>Error loading auction: " + e.getMessage() + "</p></div>");
+        return;
+    } finally {
+        if (rs != null) try { rs.close(); } catch (Exception e) {}
+        if (ps != null) try { ps.close(); } catch (Exception e) {}
+        if (conn != null) try { conn.close(); } catch (Exception e) {}
+    }
+%>
+
+<div class="page">
+  <h2>Place a Bid</h2>
+  <p><b>Auction:</b> <%= name %></p>
+  <p><b>Current Price:</b> $<%= currentPrice %></p>
+
+  <%
+    if (closed) {
+  %>
+      <p style="color:red;">This auction is closed. You cannot bid.</p>
+  <%
+    } else {
+        String flash = (String) session.getAttribute("flash");
+        if (flash != null) {
+  %>
+        <p style="color:red;"><%= flash %></p>
+  <%
+            session.removeAttribute("flash");
+        }
+  %>
+
+  <form action="placeBidHandler.jsp" method="post">
+    <input type="hidden" name="A_ID" value="<%= A_ID %>">
+
+    <p>
+      <label>Your Bid Amount ($):</label><br>
+      <input type="number" name="bidAmount" step="0.01" min="0" required>
+    </p>
+
+    <fieldset style="max-width:400px;">
+      <legend>Optional Auto-Bid Settings</legend>
+      <p>
+        <label>Maximum Auto-Bid Limit ($):</label><br>
+        <input type="number" name="buyLimit" step="0.01" min="0">
+      </p>
+      <p>
+        <label>Auto-Bid Increment ($):</label><br>
+        <input type="number" name="increment" step="0.01" min="0">
+      </p>
+      <small>
+        Leave both fields blank if you want a normal one-time bid.<br>
+        If you fill them, the system will automatically outbid others up to your max.
+      </small>
+    </fieldset>
+
+    <p>
+      <button type="submit">Submit Bid</button>
+    </p>
+  </form>
+
+  <%
+    } // end open/closed
+  %>
+</div>
