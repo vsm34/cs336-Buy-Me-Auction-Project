@@ -3,13 +3,15 @@
 <%@ include file="header.jsp" %>
 
 <%
-
+    // Requires a logged in end_user
     if (role == null || !"user".equals(role) || currentUser == null) {
         response.sendRedirect("login.jsp");
         return;
     }
 
     String username = currentUser;
+
+   
     String aIdStr = request.getParameter("A_ID");
     if (aIdStr == null) {
         out.println("<div class='page'><p style='color:red;'>No auction selected.</p></div>");
@@ -30,12 +32,17 @@
     try {
         conn = DBConnection.getConnection();
 
-
+       
         ps = conn.prepareStatement(
-            "SELECT a.Name, a.Price, a.Closed, p.Username AS SellerUsername " +
+            "SELECT a.Name, a.Price, a.Closed, " +
+            "       COALESCE(MAX(b.Price), a.Price) AS CurrentPrice, " +
+            "       p.Username AS SellerUsername " +
             "FROM auction a " +
             "LEFT JOIN posts p ON a.A_ID = p.A_ID " +
-            "WHERE a.A_ID = ?"
+            "LEFT JOIN bids_on bo ON a.A_ID = bo.A_ID " +
+            "LEFT JOIN bids b ON bo.BID_ID = b.BID_ID " +
+            "WHERE a.A_ID = ? " +
+            "GROUP BY a.A_ID, a.Name, a.Price, a.Closed, p.Username"
         );
         ps.setInt(1, A_ID);
         rs = ps.executeQuery();
@@ -46,7 +53,7 @@
         }
 
         name         = rs.getString("Name");
-        currentPrice = rs.getFloat("Price");
+        currentPrice = rs.getFloat("CurrentPrice");
         closed       = rs.getBoolean("Closed");
         seller       = rs.getString("SellerUsername");
 
@@ -67,12 +74,11 @@
   <p><b>Seller:</b> <%= (seller == null ? "-" : seller) %></p>
 
   <%
-
+   
     if (closed) {
   %>
       <p style="color:red;">This auction is closed. You cannot bid.</p>
   <%
-
     } else if (seller != null && seller.equals(username)) {
   %>
       <p style="color:red;">You created this auction and cannot bid on your own item.</p>
@@ -117,6 +123,5 @@
   </form>
 
   <%
-    }
-  %>
+    } 
 </div>
