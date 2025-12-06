@@ -2,7 +2,7 @@
 <%
 request.setCharacterEncoding("UTF-8");
 
-// must be logged in as end user
+
 String role = (String) session.getAttribute("role");
 String user = (String) session.getAttribute("username");
 if (user == null || role == null || !"user".equals(role)) {
@@ -26,7 +26,7 @@ try {
 
 try (Connection conn = DBConnection.getConnection()) {
 
-    // 1) find an active alertset for this user, or create one
+
     Integer alertId = null;
 
     try (PreparedStatement ps = conn.prepareStatement(
@@ -53,7 +53,7 @@ try (Connection conn = DBConnection.getConnection()) {
         }
     }
 
-    // 2) add watch row if not already there
+
     try (PreparedStatement ps = conn.prepareStatement(
             "SELECT 1 FROM watches WHERE Alert_ID = ? AND A_ID = ?")) {
         ps.setInt(1, alertId);
@@ -71,7 +71,7 @@ try (Connection conn = DBConnection.getConnection()) {
     }
 
 } catch (Exception e) {
-    // could log e.printStackTrace() if needed
+
 }
 
 response.sendRedirect("myAlerts.jsp?msg=Added+to+your+alerts");
