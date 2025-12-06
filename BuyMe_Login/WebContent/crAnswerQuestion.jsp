@@ -5,13 +5,13 @@
 <%
     request.setCharacterEncoding("UTF-8");
 
-    // Must be logged in as customer rep
+    //have to be logged in as customer rep
     if (role == null || !"cr".equals(role)) {
         response.sendRedirect("crLogin.jsp?error=Please+log+in+as+Customer+Rep");
         return;
     }
 
-    // Derive numeric CRID from the username "CR-100" style
+    //
     int crid = -1;
     if (currentUser != null && currentUser.startsWith("CR-")) {
         try {
@@ -19,7 +19,7 @@
         } catch (NumberFormatException ignore) {}
     }
 
-    // If POST with answer, save it
+    //If opst with answer, save it
     if ("POST".equalsIgnoreCase(request.getMethod())) {
         String qidStr = request.getParameter("qid");
         String answerText = request.getParameter("answerText");
