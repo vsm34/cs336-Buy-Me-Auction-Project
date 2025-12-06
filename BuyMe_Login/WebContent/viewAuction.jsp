@@ -3,7 +3,7 @@
 <%@ include file="header.jsp" %>
 
 <%
-    // Must be logged in as a normal end_user
+
     if (role == null || !"user".equals(role) || currentUser == null) {
         response.sendRedirect("login.jsp");
         return;
@@ -44,19 +44,19 @@
     java.sql.Time closeTime = null;
     boolean closed = false;
     float startPrice = 0f;
-    float displayPrice = 0f;   // what we show as "Current Price"
-    float topPrice = 0f;       // highest bid, if any
-    String topUser = null;     // username of highest bidder, if any
+    float displayPrice = 0f;  
+    float topPrice = 0f; 
+    String topUser = null;
     boolean hasAnyBid = false;
-    String outcomeMessage = null;  // winner message
-    Integer lastBidIdForView = null; // for views_previous logging
+    String outcomeMessage = null;
+    Integer lastBidIdForView = null; 
 %>
 
 <%
 try {
     conn = DBConnection.getConnection();
 
-    // 1) Load auction + seller + whether it should be closed by time
+
     psAuction = conn.prepareStatement(
         "SELECT a.*, " +
         "       p.Username AS SellerUsername, " +
@@ -93,7 +93,7 @@ try {
     rsAuction.close();
     psAuction.close();
 
-    // If time has passed but Closed flag isn't set yet, close it now in DB
+
     if (!closed && shouldClose) {
         closed = true;
         PreparedStatement psUpdate = conn.prepareStatement(
@@ -104,8 +104,8 @@ try {
         psUpdate.close();
     }
 
-    // 2) Compute current highest bid (and highest bidder)
-    displayPrice = startPrice; // default to starting price
+
+    displayPrice = startPrice; 
 
     psTop = conn.prepareStatement(
         "SELECT b.Price, pl.Username " +
@@ -127,7 +127,7 @@ try {
     rsTop.close();
     psTop.close();
 
-    // 3) Decide outcome message if closed
+
     if (closed) {
         if (!hasAnyBid) {
             outcomeMessage = "Auction closed. No bids were placed; no winner.";
@@ -183,7 +183,7 @@ try {
             <th>Time</th>
         </tr>
 <%
-    // 4) Full bid history (highest first)
+
     psBids = conn.prepareStatement(
         "SELECT b.BID_ID, b.Price, b.Time, pl.Username " +
         "FROM bids b " +
@@ -200,7 +200,7 @@ try {
         historyHasAnyBid = true;
         int bidId = rsBids.getInt("BID_ID");
         if (lastBidIdForView == null) {
-            // first row is highest
+
             lastBidIdForView = bidId;
         }
 %>
@@ -214,7 +214,7 @@ try {
     rsBids.close();
     psBids.close();
 
-    // 5) Log this view into views_previous (if there is at least one bid)
+
     if (historyHasAnyBid && lastBidIdForView != null) {
         try {
             psView = conn.prepareStatement(
@@ -234,7 +234,7 @@ try {
 
     <h3>Similar Auctions in the Last 30 Days</h3>
 <%
-    // 6) Similar items: same subcategory, closed in roughly the last 30 days
+
     if (subcat != null && !subcat.isEmpty()) {
         psSimilar = conn.prepareStatement(
             "SELECT A_ID, Name, Price, CloseDate, CloseTime " +
