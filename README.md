@@ -11,7 +11,7 @@ seller2 - pass_s2
 user1 - pass123
 # Admin Credentials (username - password)
 1 - adminpass
-#Customer Rep Credentials (username - password)
+# Customer Rep Credentials (username - password)
 100 - reppass1
 101 - reppass2
 102 - reppass3
