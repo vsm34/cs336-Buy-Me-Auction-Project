@@ -10,7 +10,7 @@ if (!"cr".equals(role) || cridObj == null) {
 }
 int crid = cridObj;
 String bidParam = request.getParameter("bidId");
-String msgText;
+String msgText = null;
 String errText = null;
 if (bidParam == null || bidParam.isEmpty()) {
     errText = "Missing bid id.";
