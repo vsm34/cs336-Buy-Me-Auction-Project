@@ -1,6 +1,6 @@
 # BuyMe Project Important Notes and Credentials
 - Make sure to update your mysql credentials in the DBConnection.java file to connect to databse.
-- link for demo: 
+- link for demo: https://drive.google.com/file/d/1--zV4picINv7B2BWqYbCV2VJ9MVckn-J/view?usp=sharing
 
 # End_User_Credentials (Buyer/Seller Login)
 
@@ -26,3 +26,4 @@
 | --------- |  -------- |
 | 100       | reppass1  |
 | 101       | reppass2  |
+
