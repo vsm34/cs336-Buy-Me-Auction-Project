@@ -7,7 +7,6 @@
 | Username  | Password |
 | --------- | -------- |
 | rutgers   | scarlet  |
-| user1     | pass123  |
 | buyer1    | pass_b1  |
 | buyer2    | pass_b2  |
 | buyer3    | pass_b3  |
