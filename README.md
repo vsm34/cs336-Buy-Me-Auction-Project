@@ -1,5 +1,6 @@
 # BuyMe Project Important Notes and Credentials
-- Make sure to update your mysql credentials in the DBConnection.java file to connect to databse. 
+- Make sure to update your mysql credentials in the DBConnection.java file to connect to databse.
+- link for demo: 
 
 # End_User_Credentials (Buyer/Seller Login)
 
